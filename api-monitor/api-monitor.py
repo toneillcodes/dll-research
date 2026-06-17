@@ -18,15 +18,18 @@ def get_javascript_payload(module_name):
 
             exports.forEach(exp => {{
                 try {{
+                    // --- CHANGED: Fallback to ordinal if string name is missing ---
+                    const resolvedName = exp.name ? exp.name : `ordinal_${{exp.ordinal}}`;
+
                     Interceptor.attach(exp.address, {{
                         onEnter(args) {{
-                            if (!seenFunctions.has(exp.name)) {{
-                                seenFunctions.add(exp.name);
+                            if (!seenFunctions.has(resolvedName)) {{
+                                seenFunctions.add(resolvedName);
                                 send({{
                                     type: 'activity',
                                     process_id: Process.id,
                                     module_name: moduleName,
-                                    function_name: exp.name
+                                    function_name: resolvedName // Sends 'ordinal_5' instead of failing
                                 }});
                             }}
                         }}
