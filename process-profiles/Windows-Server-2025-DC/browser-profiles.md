@@ -1,5 +1,9 @@
 # Browser Process Profiles
 
+> [!CAUTION]
+> These benchmarks were taken on systems that may not match your target.
+> Validate everything first and proceed carefully.
+
 ## Windows Server 2025 DC Module Testing Tables
 ### Build 26100.7462
 | Browser | Version Tested | Target Module | Target Function | Payload Size | Beacon Result | Notes |
