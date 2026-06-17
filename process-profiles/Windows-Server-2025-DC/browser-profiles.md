@@ -1,6 +1,7 @@
 # Browser Process Profiles
 
-## Windows Server Module Testing Table
+## Windows Server 2025 DC Module Testing Tables
+### Build 26100.7462
 | Browser | Version Tested | Target Module | Target Function | Payload Size | Beacon Result | Notes |
 |----|----|----|----|----|----|----|
 | msedge | 148.0.3967.96 | ffmpeg.dll | avcodec_open2 | 287930 | success | Stable during normal browsing |
@@ -10,8 +11,9 @@
 | firefox | 151.0.3 | ExplorerFrame.dll | DllGetVersion | 287930 | success | Stable during normal browsing, downloads work |
 
 ## Module Lists
-### Chrome
-#### Version 148.0.7778.218 (Official Build) (64-bit)
+### Build 26100.7462
+#### Chrome
+##### Version 148.0.7778.218 (Official Build) (64-bit)
 ```
 windows-process-injection\module-stomping > .\list-process-dlls.exe -p 5408
 [+] Enumerating loaded modules:
@@ -145,8 +147,8 @@ windows-process-injection\module-stomping > .\list-process-dlls.exe -p 5408
 windows-process-injection\module-stomping >
 ```
 
-### Edge
-#### Version 148.0.3967.96 (Official build) (64-bit)
+#### Edge
+##### Version 148.0.3967.96 (Official build) (64-bit)
 ```
 windows-process-injection\module-stomping > .\list-process-dlls.exe -p 3896
 [+] Enumerating loaded modules:
@@ -302,8 +304,8 @@ windows-process-injection\module-stomping > .\list-process-dlls.exe -p 3896
 [0x00007FFDCA050000] BitsProxy.dll
 windows-process-injection\module-stomping >
 ```
-### Firefox
-#### 151.0.3 (64-bit)
+#### Firefox
+##### 151.0.3 (64-bit)
 ```
 windows-process-injection\module-stomping > .\list-process-dlls.exe -p 1772
 [+] Enumerating loaded modules:

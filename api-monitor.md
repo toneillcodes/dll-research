@@ -1,3 +1,4 @@
+# API Monitor
 ## Frida Dynamic API Monitoring Telemetry Agent
 
 This script is a dynamic instrumentation tool powered by **Frida**. It intercepts and logs the execution of exported functions from a specific target module (such as a Windows DLL) within a process. It is designed for reverse engineering, malware analysis, and API telemetry gathering.

@@ -1,3 +1,5 @@
+# Find Dormant Blocks
+
 ## PE Dormant Export Analyzer
 
 This tool cross-references runtime execution logs with a Windows Portable Executable (PE) file's structural metadata. By parsing the export directory and Structured Exception Handling (SEH) unwind data (`.pdata`), it identifies contiguous blocks of unused or dormant functions that meet a minimum capacity threshold. 

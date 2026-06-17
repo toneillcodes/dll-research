@@ -1,3 +1,5 @@
+# Make Stability Plan
+
 ## Stability Campaign Plan Generator
 
 This script is a automation pipeline utility designed to ingest raw CSV target lists (generated during binary auditing or dormant export analysis) and convert them into structured JSON stability profiles. These profiles are explicitly formatted for consumption by the process stability test harness.
