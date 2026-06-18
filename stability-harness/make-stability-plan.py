@@ -5,22 +5,53 @@ import sys
 
 DEFAULT_TIMEOUT = 60
 
-def transform_data(csv_file_path, json_file_path, stomp_path, timeout_seconds):
+def transform_data(csv_file_path, json_file_path, stomp_path, timeout_seconds, process_name):
     transformed_data = []
 
     try:
         with open(csv_file_path, mode="r", encoding="utf-8") as csv_file:
+            # Read the first line to sniff out the field headers automatically
+            sample = csv_file.readline()
+            csv_file.seek(0)
+            
+            headers = [h.strip() for h in sample.split(",")]
+            
+            # --- AUTO-DETECTION MATRIX ---
+            keys = {
+                "Name": "Name",
+                "TextSectionSize": "TextSectionSize",
+                "FunctionName": "FunctionName",
+                "Offset": "Offset",
+                "FuncSize": "FuncSize"
+            }
+            
+            if "TargetProcess" in headers:
+                print("[+] Auto-detected 'list-process-dlls' input profile schema.")
+                # Uses default mapping keys
+            elif "FuncSize" in headers:
+                print("[+] Auto-detected 'dump-exports' input profile schema.")
+                # Uses default mapping keys tailored by dump-exports layout
+                keys["Name"] = "ModuleName"
+                keys["TextSectionSize"] = "FullTextSectionSize"                
+            else:
+                print("[-] Warning: Unrecognized CSV header format. Attempting fallback mapping parsing...")
+
             csv_reader = csv.DictReader(csv_file)
 
             for row in csv_reader:
-                target_process = row.get("TargetProcess", "").strip()
-                module_name = row.get("ModuleName", "").strip()
-                full_text_size = row.get("FullTextSectionSize", "").strip()
-                func_name = row.get("FunctionName", "").strip()
-                offset = row.get("Offset", "").strip()
-                func_size = row.get("FuncSize", "").strip()
+                # Target process is explicitly bound via the CLI parameter switch input
+                target_process = process_name.strip()
+                
+                module_name = row.get(keys["Name"], "").strip()
+                full_text_size = row.get(keys["TextSectionSize"], "").strip()
+                func_name = row.get(keys["FunctionName"], "").strip()
+                offset = row.get(keys["Offset"], "").strip()
+                func_size = row.get(keys["FuncSize"], "").strip()
 
                 if not target_process or not module_name:
+                    continue
+
+                if module_name.endswith(".exe"):
                     continue
 
                 # Initialize standard base parameters
@@ -28,15 +59,18 @@ def transform_data(csv_file_path, json_file_path, stomp_path, timeout_seconds):
 
                 # --- CONDITIONAL FLEXIBILITY SWITCH ---
                 if func_name:
-                    # CASE 1: Precise function-granular target campaign
-                    cmd_args += ["-f", func_name, "-s", func_size]
+                    if func_name.lower().startswith("ordinal_"):
+                        # CASE 1A: Anonymous Ordinal Export - Shift to structural offset flag
+                        cmd_args += ["-o", offset, "-s", func_size]
+                    else:
+                        # CASE 1B: Precise function-granular target campaign
+                        cmd_args += ["-f", func_name, "-s", func_size]
                 else:
-                    # CASE 2: Fallback to Full Module Stomp Campaign
-                    # Uses the full text section size and excludes function/offset flags
+                    # CASE 2: Fallback to Full Module Stomp Campaign (from list-process-dlls)
                     if full_text_size and full_text_size != "0":
                         cmd_args += ["-s", full_text_size]
                     else:
-                        print(f"[-] Warning: Skipping empty function row for {module_name} due to missing FullTextSectionSize.")
+                        print(f"[-] Warning: Skipping empty function row for {module_name} due to missing TextSectionSize.")
                         continue
 
                 # Add standard operational switch flags
@@ -66,11 +100,12 @@ def transform_data(csv_file_path, json_file_path, stomp_path, timeout_seconds):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate adaptive module-stomping plans dynamically from CSV layouts.")
-    parser.add_argument("-i", "--input", required=True, help="Path to input targets CSV file.")
+    parser = argparse.ArgumentParser(description="Generate adaptive module-stomping plans dynamically from multi-format tool outputs.")
+    parser.add_argument("-i", "--input", required=True, help="Path to input targets CSV file (from list-process-dlls or dump-exports).")
     parser.add_argument("-o", "--output", required=True, help="Destination stability campaign configuration json.")
     parser.add_argument("-s", "--stomp-path", required=True, help="Absolute path to the stomp engineering utility.")
+    parser.add_argument("-p", "--process", required=True, help="Target application executable path to use as target_executable.")
     parser.add_argument("-t", "--timeout", type=int, default=DEFAULT_TIMEOUT, help="Timeout value per execution step.")
 
     args = parser.parse_args()
-    transform_data(args.input, args.output, args.stomp_path, args.timeout)
+    transform_data(args.input, args.output, args.stomp_path, args.timeout, args.process)

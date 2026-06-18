@@ -14,13 +14,16 @@ def is_module_loaded(pid, module_name):
     except Exception:
         return False
 
-def log_test_metric(log_manifest_path, iteration, target, module, status, exit_code, duration):
+# --- CHANGED: Added target_function and target_offset parameters to signature ---
+def log_test_metric(log_manifest_path, iteration, target, module, target_function, target_offset, status, exit_code, duration):
     """Commits test-case analytical records to a raw JSONL log manifest."""
     entry = {
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "iteration": iteration,
         "target_binary": os.path.basename(target),
         "evaluated_module": module,
+        "target_function": target_function,  # Added to telemetry output
+        "target_offset": target_offset,      # Added to telemetry output
         "status": status,
         "kernel_exit_code": hex(exit_code) if isinstance(exit_code, int) else exit_code,
         "execution_duration_sec": round(duration, 2)
@@ -66,6 +69,10 @@ def run_parametric_campaign(config_path, log_manifest_path):
             print(f"[-] Skipping entry #{idx}: Missing 'target_executable' or 'trigger_dll'.")
             continue
 
+        # --- CHANGED: Extract dynamic target identifiers inline from the existing tool_args array ---
+        target_function = tool_args[tool_args.index("-f") + 1] if "-f" in tool_args and tool_args.index("-f") + 1 < len(tool_args) else None
+        target_offset = tool_args[tool_args.index("-o") + 1] if "-o" in tool_args and tool_args.index("-o") + 1 < len(tool_args) else None
+
         print(f"[-] Executing Profile {idx}/{len(profiles)}: {os.path.basename(target)}")
         
         # Environmental Sanity Check: Ensure no hanging instances remain
@@ -84,9 +91,6 @@ def run_parametric_campaign(config_path, log_manifest_path):
             # If you happen to be testing older legacy environments, you'll just need to adjust that number (15.0 for Office 2013, 14.0 for Office 2010).
 
         time.sleep(0.5)
-
-        start_time = time.time()
-        process = None
 
         start_time = time.time()
         process = None
@@ -150,13 +154,15 @@ def run_parametric_campaign(config_path, log_manifest_path):
                 status_str = "TERMINATED_CLEAN"
                 print("    [+] Result: Process finished cleanly prior to timeout.")
 
-            log_test_metric(log_manifest_path, idx, target, trigger_dll, status_str, exit_code, duration)
+            # --- CHANGED: Added target_function and target_offset variables ---
+            log_test_metric(log_manifest_path, idx, target, trigger_dll, target_function, target_offset, status_str, exit_code, duration)
 
         except subprocess.TimeoutExpired:
             # Application successfully survived the duration requirements
             duration = time.time() - start_time
             print(f"    [+] Result: Process maintained stability for full {timeout_sec}s.")
-            log_test_metric(log_manifest_path, idx, target, trigger_dll, "STABLE_TIMEOUT_REACHED", "STABLE", duration)
+            # --- CHANGED: Added target_function and target_offset variables ---
+            log_test_metric(log_manifest_path, idx, target, trigger_dll, target_function, target_offset, "STABLE_TIMEOUT_REACHED", "STABLE", duration)
 
         finally:
             # Thorough teardown processing per iteration loop
