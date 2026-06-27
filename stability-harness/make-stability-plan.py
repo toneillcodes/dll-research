@@ -39,8 +39,8 @@ def transform_data(csv_file_path, json_file_path, stomp_path, timeout_seconds, p
             csv_reader = csv.DictReader(csv_file)
 
             for row in csv_reader:
-                # Target process is explicitly bound via the CLI parameter switch input
-                target_process = process_name.strip()
+                # Safely normalize the target process name if it was supplied
+                target_process = process_name.strip() if process_name else None
                 
                 module_name = row.get(keys["Name"], "").strip()
                 full_text_size = row.get(keys["TextSectionSize"], "").strip()
@@ -48,7 +48,7 @@ def transform_data(csv_file_path, json_file_path, stomp_path, timeout_seconds, p
                 offset = row.get(keys["Offset"], "").strip()
                 func_size = row.get(keys["FuncSize"], "").strip()
 
-                if not target_process or not module_name:
+                if not module_name:
                     continue
 
                 if module_name.endswith(".exe"):
@@ -65,19 +65,23 @@ def transform_data(csv_file_path, json_file_path, stomp_path, timeout_seconds, p
                     else:
                         # CASE 1B: Precise function-granular target campaign
                         cmd_args += ["-f", func_name, "-s", func_size]
+                elif offset and func_size:
+                    # If function name is missing but offset and size exist, use the raw offset directly
+                    #cmd_args += ["-o", offset, "-s", func_size]
+                    cmd_args += ["-o", offset]
                 else:
                     # CASE 2: Fallback to Full Module Stomp Campaign (from list-process-dlls)
                     if full_text_size and full_text_size != "0":
                         cmd_args += ["-s", full_text_size]
                     else:
-                        print(f"[-] Warning: Skipping empty function row for {module_name} due to missing TextSectionSize.")
+                        print(f"[-] Warning: Skipping empty function row for {module_name} due to missing Target Parameters.")
                         continue
 
                 # Add standard operational switch flags
                 cmd_args.append("-n")
 
                 json_entry = {
-                    "target_executable": target_process,
+                    "target_executable": target_process, 
                     "trigger_dll": module_name,
                     "secondary_tool": stomp_path,
                     "tool_arguments": cmd_args,
@@ -104,7 +108,7 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--input", required=True, help="Path to input targets CSV file (from list-process-dlls or dump-exports).")
     parser.add_argument("-o", "--output", required=True, help="Destination stability campaign configuration json.")
     parser.add_argument("-s", "--stomp-path", required=True, help="Absolute path to the stomp engineering utility.")
-    parser.add_argument("-p", "--process", required=True, help="Target application executable path to use as target_executable.")
+    parser.add_argument("-p", "--process", default=None, help="Optional: Target application executable path to use as target_executable.")
     parser.add_argument("-t", "--timeout", type=int, default=DEFAULT_TIMEOUT, help="Timeout value per execution step.")
 
     args = parser.parse_args()
