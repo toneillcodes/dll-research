@@ -18,7 +18,14 @@ Passively monitoring active APIs.
 * **PE Dormant Export Analyzer (`find-dormant-blocks.py`):** A static analysis tool that parses a DLL's export table and SEH exception directories (`.pdata`) to map function boundaries linearly in memory. It cross-references these mappings against runtime telemetry and custom blacklists to identify contiguous, unused code blocks that meet specified capacity thresholds.
     - [Documentation](/documentation/find-dormant-blocks.md)
 
-### [Stability Harness](stability-harness.md)
+### [DLL Development](/dll-development/README.md)
+* `hellow-dll.c` is a minimalistic Dynamic Link Library (DLL) template designed to verify basic DLL loading dynamics and export triggering. Unlike more complex implementations that decouple execution via background threads, this component serves as a direct, synchronized test payload to confirm immediate entry-point execution and explicit export accessibility.
+    - [Documentation](/documentation/hellow-dll.md)
+
+* `notabeacon.c` is a benign, non-malicious C-based DLL designed to mimic the execution flow and timing footprints typically associated with command-and-control (C2) agents or beacons. It serves as a safe testing utility for verifying detection pipelines, telemetry collection, and binary side-loading or manual mapping techniques without introducing actual risk to the environment.
+    - [Documentation](/documentation/notabeacon.md)
+
+### [Stability Harness](/documentation/stability-harness.md)
 * **Stability Campaign Plan Generator (`make-stability-plan.py`):** A data transformation utility that converts raw CSV binary audit sheets into structured JSON execution plans. It adaptively shifts between granular function-level testing arguments or broad full-module section overwrites based on available metadata.
     - [Documentation](/documentation/make-stability-plan.md)
 
