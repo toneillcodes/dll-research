@@ -1,6 +1,6 @@
 # API Monitor
 ## Overview
-Monitoring active APIs.
+Monitoring active APIs and using basic data analysis to identify potential targets.
 
 ## Index
 * [`api-monitor.py`](api-monitor.py)
