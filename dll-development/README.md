@@ -1,5 +1,5 @@
 # DLL Development
-## Component: `hellow-dll.c`
+## Component: `hellow-dll`
 
 `hellow-dll.c` is a minimalistic Dynamic Link Library (DLL) template designed to verify basic DLL loading dynamics and export triggering. Unlike more complex implementations that decouple execution via background threads, this component serves as a direct, synchronized test payload to confirm immediate entry-point execution and explicit export accessibility.
     - [Detailed Documentation](/documentation/hellow-dll.md)
@@ -15,7 +15,7 @@ To compile the source code into a DLL using the Microsoft Visual C++ compiler (`
 cl.exe /LD hellow-dll.c /Fe:hellow.dll
 ```
 
-## Component: `notabeacon.c`
+## Component: `notabeacon`
 
 `notabeacon.c` is a benign, non-malicious C-based DLL designed to mimic the execution flow and timing footprints typically associated with command-and-control (C2) agents or beacons. It serves as a safe testing utility for verifying detection pipelines, telemetry collection, and binary side-loading or manual mapping techniques without introducing actual risk to the environment.
     - [Detailed Documentation](/documentation/notabeacon.md)
@@ -31,4 +31,79 @@ To compile the source code into a DLL using the Microsoft Visual C++ compiler (`
 
 ```cmd
 cl.exe /LD notabeacon.c /Fe:notabeacon.dll
+```
+
+## Component 'whereami'
+
+`whereami-lib.c` todo: write summary
+    - Detailed Documentation
+
+`whereami.c` todo: write summary
+    - Detailed Documentation
+
+### Compilation
+First, compile the whereami-lib source code into a DLL using the Microsoft Visual C++ compiler (`cl.exe`), execute the following command in a Developer Command Prompt:
+
+
+## Component 'whereami'
+
+`pebwalk-lib.c` todo: write summary
+    - Detailed Documentation
+
+`pebwalk.c` todo: write summary
+    - Detailed Documentation
+
+### Compilation
+First, compile the whereami-lib source code into a DLL using the Microsoft Visual C++ compiler (`cl.exe`), execute the following command in a Developer Command Prompt:
+
+```cmd
+c:\dev\dll-research\dll-development>cl /LD whereami-lib.c
+Microsoft (R) C/C++ Optimizing Compiler Version 19.16.27054 for x64
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+whereami-lib.c
+Microsoft (R) Incremental Linker Version 14.16.27054.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+/out:whereami-lib.dll
+/dll
+/implib:whereami-lib.lib
+whereami-lib.obj
+   Creating library whereami-lib.lib and object whereami-lib.exp
+
+c:\dev\dll-research\dll-development>
+```
+
+Second, compile the wheream source code into an executable using the Microsoft Visual C++ compiler (`cl.exe`), execute the following command in a Developer Command Prompt:
+
+```cmd
+c:\dev\dll-research\dll-development>cl.exe whereami.c
+Microsoft (R) C/C++ Optimizing Compiler Version 19.16.27054 for x64
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+whereami.c
+Microsoft (R) Incremental Linker Version 14.16.27054.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+/out:whereami.exe
+whereami.obj
+
+c:\dev\dll-research\dll-development>
+```
+
+### Execution
+
+```cmd 
+c:\dev\dll-research\dll-development> whereami.exe
+[test] Loading whereami-lib.dll...
+[test] DLL loaded at: 00007FF849740000
+[test] Resolving target function
+[test] Target function found at: 00007FF849741010
+[test] Calling WhereAmI...
+
+[whereami] Found my base address: 00007FF849740000
+
+[test] Done.
+
+c:\dev\dll-research\dll-development>
 ```

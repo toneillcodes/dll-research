@@ -1,4 +1,4 @@
-// cl.exe loader.c
+// cl.exe pe-mapper.c
 #include <windows.h>
 #include <stdio.h>
 
