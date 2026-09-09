@@ -1,29 +1,51 @@
-// Compile command: cl.exe /LD notabeacon.c /Fe:notabeacon.dll
+// notabeacon.c
+// compilation: cl.exe /O1 /GS- /LD .\notabeacon.c /link /NODEFAULTLIB /ENTRY:DllMain /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF kernel32.lib
 #include <windows.h>
-#include <stdio.h>
 
-// A global handle to keep track of our worker thread footprint
 HANDLE g_hWorkerThread = NULL;
 
-// The asynchronous worker loop that replicates agent heartbeat execution
+static void ConsolePrint(const char* text) {
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut && hOut != INVALID_HANDLE_VALUE) {
+        DWORD written = 0;
+        DWORD len = 0;
+        while (text[len]) len++;
+        WriteFile(hOut, text, len, &written, NULL);
+    }
+}
+
+static void PrintNumber(int val) {
+    char buf[16];
+    int i = 0;
+    if (val == 0) {
+        buf[i++] = '0';
+    } else {
+        char temp[16];
+        int t = 0;
+        while (val > 0) {
+            temp[t++] = '0' + (val % 10);
+            val /= 10;
+        }
+        while (t > 0) {
+            buf[i++] = temp[--t];
+        }
+    }
+    buf[i] = '\0';
+    ConsolePrint(buf);
+}
+
 DWORD WINAPI AgentLoop(LPVOID lpParam) {
     int checkinCounter = 0;
-    DWORD sleepIntervalMs = 30000; // 30 second default interval
+    DWORD sleepIntervalMs = 5000; // Reduced to 5s for easier testing
 
-    printf("[PAYLOAD] Asynchronous agent validation thread started successfully.\n");
+    ConsolePrint("[PAYLOAD] Asynchronous agent validation thread started successfully.\n");
 
-    // Replicate an infinite execution cycle
     while (TRUE) {
         checkinCounter++;
-        printf("[PAYLOAD] Heartbeat Event #%d - Dispatching local diagnostics check...\n", checkinCounter);
+        ConsolePrint("[PAYLOAD] Heartbeat Event #");
+        PrintNumber(checkinCounter);
+        ConsolePrint(" - Dispatching local diagnostics check...\n");
 
-        // Standard, non-malicious workload simulation (e.g., system time check)
-        SYSTEMTIME st;
-        GetLocalTime(&st);
-        printf("[PAYLOAD] Local System Time: %02d:%02d:%02d\n", st.wHour, st.wMinute, st.wSecond);
-
-        // Mimic beacon 'Jitter' or sleep intervals
-        printf("[PAYLOAD] Entering interval sleep for %lu ms.\n\n", sleepIntervalMs);
         Sleep(sleepIntervalMs);
     }
 
@@ -31,39 +53,23 @@ DWORD WINAPI AgentLoop(LPVOID lpParam) {
 }
 
 __declspec(dllexport) void voidRunTest(void) {
-    printf("[PAYLOAD] Manual verification export triggered.\n");
+    ConsolePrint("[PAYLOAD] Manual verification export triggered.\n");
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
-    switch (reason) {
-        case DLL_PROCESS_ATTACH:
-            // Crucial for manual mapping: prevents thread attach/detach locks
-            DisableThreadLibraryCalls(hinst);
+    if (reason == DLL_PROCESS_ATTACH) {
+        DisableThreadLibraryCalls(hinst);
+        ConsolePrint("[PAYLOAD] DllMain triggered with DLL_PROCESS_ATTACH.\n");
 
-            printf("[PAYLOAD] DllMain triggered with DLL_PROCESS_ATTACH.\n");
-
-            // Hand execution off to a background thread immediately
-            g_hWorkerThread = CreateThread(
-                NULL,               // Default security descriptors
-                0,                  // Default stack size
-                AgentLoop,          // Target function pointer
-                NULL,               // No arguments passed
-                0,                  // Run immediately upon instantiation
-                NULL                // Ignore thread identifier tracking
-            );
-
-            if (g_hWorkerThread == NULL) {
-                printf("[PAYLOAD] Critical Error: Failed to spawn background worker loop.\n");
-                return FALSE;
-            }
-            break;
-
-        case DLL_PROCESS_DETACH:
-            // Cleanup the background handle if the process closes down cleanly
-            if (g_hWorkerThread) {
-                CloseHandle(g_hWorkerThread);
-            }
-            break;
+        g_hWorkerThread = CreateThread(NULL, 0, AgentLoop, NULL, 0, NULL);
+        if (!g_hWorkerThread) {
+            ConsolePrint("[PAYLOAD] Failed to spawn background worker.\n");
+            return FALSE;
+        }
+    } else if (reason == DLL_PROCESS_DETACH) {
+        if (g_hWorkerThread) {
+            CloseHandle(g_hWorkerThread);
+        }
     }
-    return TRUE; 
+    return TRUE;
 }

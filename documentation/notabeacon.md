@@ -8,7 +8,6 @@ This document provides a comprehensive analysis of `notabeacon.c`, detailing its
 
 ### Headers
 * `#include <windows.h>`: The core header file containing declarations for all the Windows API functions, data types (like `DWORD`, `HANDLE`, `BOOL`), and macros used throughout the program.
-* `#include <stdio.h>`: Standard input/output library used here exclusively for printing logging statements to the console (`printf`).
 
 ### Global Variables
 ```c
@@ -53,7 +52,7 @@ The infinite loop simulates a command-and-control (C2) agent's operational cycle
 __declspec(dllexport) void voidRunTest(void)
 ```
 * **Purpose:** The `__declspec(dllexport)` storage-class attribute explicitly directs the compiler to add `voidRunTest` to the DLL’s Export Address Table (EAT).
-* **Utility:** This allows tools like `rundll32.exe` or dynamic loaders using `GetProcAddress` to find and execute this specific code block directly without walking through the primary initialization path.
+* **Utility:** This is really only useful to validate that the DLL loaded successfully and an export could be exported and run.
 
 ---
 
@@ -62,7 +61,7 @@ __declspec(dllexport) void voidRunTest(void)
 ```c
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
 ```
-* **Purpose:** This is the standard entry-point function for a dynamic-link library. The operating system calls this function when loading or unloading the module into a process's memory space.
+* **Purpose:** This is the standard entry-point function for a dynamic-link library. In normal execution, the operating system calls this function when loading or unloading the module into a process's memory space.
 
 ### Case: `DLL_PROCESS_ATTACH`
 Triggered immediately when the DLL is first mapped into the virtual address space of a process.
@@ -91,3 +90,61 @@ Triggered when the DLL is being unmapped from the host process's address space.
   if (g_hWorkerThread) { CloseHandle(g_hWorkerThread); }
   ```
   Verifies if a thread handle exists. If it does, `CloseHandle` decreases the thread object's usage count, allowing the operating system to free kernel resources associated with that thread once it terminates.
+
+Compilation
+```
+cl.exe /O1 /GS- /LD .\notabeacon.c /link /NODEFAULTLIB /ENTRY:DllMain /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF kernel32.lib /nologo
+```
+
+Example compilation output
+```
+PS C:\dev\dll-research\dll-development> cl.exe /O1 /GS- /LD .\notabeacon.c /link /NODEFAULTLIB /ENTRY:DllMain /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF kernel32.lib /nologo
+notabeacon.c
+   Creating library notabeacon.lib and object notabeacon.exp
+PS C:\dev\dll-research\dll-development>
+```
+
+Difference between compiling with /LD vs additional flags
+```
+PS C:\dev\dll-research\dll-development> cl.exe /LD notabeacon.c
+Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35228 for x64
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+notabeacon.c
+Microsoft (R) Incremental Linker Version 14.44.35228.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+/out:notabeacon.dll
+/dll
+/implib:notabeacon.lib
+notabeacon.obj
+   Creating library notabeacon.lib and object notabeacon.exp
+PS C:\dev\dll-research\dll-development> (Get-Item notabeacon.dll).Length
+104448
+PS C:\dev\dll-research\dll-development>
+```
+Building with optimization flags
+```
+PS C:\dev\dll-research\dll-development> cl.exe /O1 /GS- /LD .\notabeacon.c /link /NODEFAULTLIB /ENTRY:DllMain /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF kernel32.lib
+Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35228 for x64
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+notabeacon.c
+Microsoft (R) Incremental Linker Version 14.44.35228.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+/out:notabeacon.dll
+/dll
+/implib:notabeacon.lib
+/NODEFAULTLIB
+/ENTRY:DllMain
+/SUBSYSTEM:WINDOWS
+/OPT:REF
+/OPT:ICF
+kernel32.lib
+notabeacon.obj
+   Creating library notabeacon.lib and object notabeacon.exp
+PS C:\dev\dll-research\dll-development> (Get-Item notabeacon.dll).Length
+3072
+PS C:\dev\dll-research\dll-development>
+```
